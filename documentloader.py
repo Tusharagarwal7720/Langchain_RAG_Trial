@@ -1,8 +1,9 @@
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import PyPDFLoader, TextLoader, DocxLoader
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.document_loaders import Docx2txtLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_chroma import Chroma  
 from config import DATA_DIR, CHROMA_PERSIST_DIR, EMBEDDING_MODEL
 
 def load_documents(file_paths: list):
@@ -14,7 +15,7 @@ def load_documents(file_paths: list):
         elif ext == ".txt":
             loader = TextLoader(file)
         elif ext == ".docx":
-            loader = DocxLoader(file)
+            loader = Docx2txtLoader(file)
         else:
             print(f"Unsupported file: {file}")
             continue
@@ -30,5 +31,11 @@ def create_vectorstore(documents):
     vectordb = Chroma.from_documents(
         documents, embeddings, persist_directory=CHROMA_PERSIST_DIR
     )
-    vectordb.persist()
+    
     return vectordb
+
+def delete_vectorstore():
+    import shutil
+    if os.path.exists(CHROMA_PERSIST_DIR):
+        shutil.rmtree(CHROMA_PERSIST_DIR)
+        print("Vectorstore deleted.")
