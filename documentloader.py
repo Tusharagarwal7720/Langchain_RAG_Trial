@@ -18,7 +18,7 @@ def load_documents(file_paths: list):
         elif ext == ".docx":
             loader = Docx2txtLoader(file)
         else:
-            print(f"⚠️ Unsupported file type: {file}")
+            print(f"Unsupported file type: {file}")
             continue
         docs.extend(loader.load())
 

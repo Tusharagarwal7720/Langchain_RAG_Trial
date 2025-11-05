@@ -51,25 +51,59 @@ def close_vectorstore():
 def get_llm():
     global llm
     if llm is None:
-        llm = GPT4All(model=MODEL_PATH, allow_download=False)
+        llm = GPT4All(
+        model=MODEL_PATH,
+        allow_download=False,
+        n_predict=2048,  
+        temp=0.7
+    )
     return llm
 
 
+from deep_translator import GoogleTranslator
+from langdetect import detect
+
 def ask_question(query: str) -> str:
+
+    try:
+        detected_lang = detect(query)
+    except Exception:
+        detected_lang = "en"
+
+   
+    if detected_lang == "ja":
+        print("Translating query to English...")
+        query_en = GoogleTranslator(source="ja", target="en").translate(query)
+    else:
+        query_en = query
+
+   
     retriever = get_vectorstore().as_retriever(search_kwargs={"k": 3})
-    docs = retriever.invoke(query)
+    docs = retriever.invoke(query_en)
 
     if not docs:
         return "I could not find any relevant information in the uploaded documents."
 
+    
     context = "\n\n".join([d.page_content for d in docs])
     prompt = (
         f"Use the following context to answer the question in simple English.\n\n"
         f"Context:\n{context}\n\n"
-        f"Question: {query}\n\nAnswer:"
+        f"Question: {query_en}\n\nAnswer:"
     )
 
-    return get_llm().invoke(prompt)
+   
+    answer_en = get_llm().invoke(prompt)
+
+    
+    if detected_lang == "ja":
+        print("Translating answer back to Japanese...")
+        answer_final = GoogleTranslator(source="en", target="ja").translate(answer_en)
+    else:
+        answer_final = answer_en
+
+    return answer_final
+
 
 
 def get_qa_chain():
